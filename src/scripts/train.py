@@ -44,7 +44,7 @@ def fitness_func(p) -> float:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Train a Dino-Evo agent using a genetic algorithm.")
+        description="Train a simple NN agent using a genetic algorithm.")
     parser.add_argument('--train-gui', action='store_true',
                         help="Enable visualization of population during training using PyGame.")
     parser.add_argument('--showcase-best', action='store_true',
