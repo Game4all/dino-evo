@@ -3,6 +3,8 @@
 
 This project aims to evolve a simple neural network agent using a genetic algorithm to play an infinite runner game such as the Google Chrome Dino.
 
+![demo](assets/training_gen.gif)
+
 
 ## Installation & Usage
 
