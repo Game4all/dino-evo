@@ -23,9 +23,13 @@ FINAL_MUTATION_STRENGTH = 1e-5
 INITIAL_MUTATION_RATE = 0.5
 FINAL_MUTATION_RATE = 0.01
 
-
 INPUT_NODES = 11
 ACTIONS = list(DinoAction)
+
+MIN_AIR_TIME_PENALTY = 0.0005
+MAX_AIR_TIME_PENALTY = 0.5
+
+AIR_TIME_PENALTY = 0.1
 
 
 def create_brain() -> AgentBrain:
@@ -37,9 +41,9 @@ def create_brain() -> AgentBrain:
     ])
 
 
-def fitness_func(p) -> float:
+def fitness_func(p, air_time_penalty) -> float:
     """Calculates the fitness score for a given player."""
-    return p.score - p.total_air_time * 0.1
+    return p.score - p.total_air_time * air_time_penalty
 
 
 def main():
@@ -55,15 +59,21 @@ def main():
                         help=f"Size of the population for each generation (default: {POPULATION_SIZE}).")
     parser.add_argument('--alpha', type=float, default=ALPHA_FACTOR,
                         help=f"Exploration factor between 0 and 1 aka alpha (default: {ALPHA_FACTOR}).")
+    parser.add_argument('--air-penalty', type=float, default=AIR_TIME_PENALTY,
+                        help=(f"Air-time penalty multiplier applied to total_air_time in the fitness function "
+                              f"in range [{MIN_AIR_TIME_PENALTY}, {MAX_AIR_TIME_PENALTY}] (default: {AIR_TIME_PENALTY})."))
     args = parser.parse_args()
 
     # use arguments for population size and number of generations
     population_size = args.population
     num_generations = args.generations
     alpha = np.clip(args.alpha, 0, 1)
+    air_time_penalty = np.clip(
+        args.air_penalty, MIN_AIR_TIME_PENALTY, MAX_AIR_TIME_PENALTY)
 
     print(
-        f"Starting training for {num_generations} generations with population size {population_size} and exploration factor (alpha) {alpha}.")
+        f"Starting training for {num_generations} generations with population size {population_size}, "
+        f"exploration factor (alpha) {alpha}, and air-time penalty {air_time_penalty:.2f}.")
 
     view, screen, clock, font = None, None, None, None
     if args.train_gui:
@@ -144,7 +154,8 @@ def main():
             break
 
         # ===================== Calculating fitness of each agent  =====================
-        fitness_scores = [fitness_func(p) for p in env.players]
+        fitness_scores = [fitness_func(p, air_time_penalty)
+                          for p in env.players]
 
         population_with_fitness = list(zip(population, fitness_scores))
         population_with_fitness.sort(key=lambda x: x[1], reverse=True)
@@ -205,7 +216,7 @@ def main():
             pygame.display.set_caption("Best agent showcase_best")
             screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
             clock = pygame.time.Clock()
-            font = pygame.font.Font("assets/PressStart2P-Regular.ttf", 14)
+            font = pygame.font.Font("../assets/PressStart2P-Regular.ttf", 14)
             view = PyGameEnvVis(screen, font, SCREEN_WIDTH, SCREEN_HEIGHT)
 
         if args.showcase_best:
