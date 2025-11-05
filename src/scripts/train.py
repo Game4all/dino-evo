@@ -1,4 +1,6 @@
 import time
+import pickle
+from typing import Optional
 import pygame
 import numpy as np
 import argparse
@@ -9,14 +11,19 @@ from dino_evo.agent import AgentBrain, relu, sigmoid, tanh
 from dino_evo.ga import ga_blx_alpha_crossover, ga_mutate, tournament_selection, HyperParamAnnealingSchedule, calculate_population_diversity
 from dino_evo.vis import PyGameEnvVis
 
-POPULATION_SIZE = 200
-NUM_GENERATIONS = 50
-ALPHA_FACTOR = 0.6
-
-ELITISM_COUNT = 8
-ENV_SEED = 0xDEAD
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
+
+# Default population size for GA
+POPULATION_SIZE = 200
+# Default generation count for GA
+NUM_GENERATIONS = 50
+# Exploration factor for weights crossover aka alpha
+ALPHA_FACTOR = 0.6
+# Elitism factor
+ELITISM_COUNT = 8
+# Default seed
+ENV_SEED = 0xDEAD
 
 INITIAL_MUTATION_STRENGTH = 2e-1
 FINAL_MUTATION_STRENGTH = 1e-5
@@ -30,7 +37,6 @@ MIN_AIR_TIME_PENALTY = 0.0005
 MAX_AIR_TIME_PENALTY = 0.5
 
 AIR_TIME_PENALTY = 0.1
-
 
 def create_brain() -> AgentBrain:
     """Creates a brain network to control a dino."""
@@ -58,22 +64,28 @@ def main():
     parser.add_argument('-p', '--population', type=int, default=POPULATION_SIZE,
                         help=f"Size of the population for each generation (default: {POPULATION_SIZE}).")
     parser.add_argument('--alpha', type=float, default=ALPHA_FACTOR,
-                        help=f"Exploration factor between 0 and 1 aka alpha (default: {ALPHA_FACTOR}).")
+                        help=f"Exploration factor for weight crossover between 0 and 1 aka alpha (default: {ALPHA_FACTOR}).")
     parser.add_argument('--air-penalty', type=float, default=AIR_TIME_PENALTY,
                         help=(f"Air-time penalty multiplier applied to total_air_time in the fitness function "
                               f"in range [{MIN_AIR_TIME_PENALTY}, {MAX_AIR_TIME_PENALTY}] (default: {AIR_TIME_PENALTY})."))
+    parser.add_argument(
+        '--save-to', type=str, default=None, help=f"The file to save the best model to. (optional)")
+    parser.add_argument("--seed", type=int, default=None,
+                        help=f"The seed to use for RNG (defaults to {ENV_SEED})")
     args = parser.parse_args()
 
     # use arguments for population size and number of generations
     population_size = args.population
     num_generations = args.generations
     alpha = np.clip(args.alpha, 0, 1)
+    seed = args.seed if args.seed else ENV_SEED
     air_time_penalty = np.clip(
         args.air_penalty, MIN_AIR_TIME_PENALTY, MAX_AIR_TIME_PENALTY)
 
     print(
-        f"Starting training for {num_generations} generations with population size {population_size}, "
-        f"exploration factor (alpha) {alpha}, and air-time penalty {air_time_penalty:.2f}.")
+        f"Starting training for {num_generations} generations with population size = {population_size}, "
+        f"exploration factor (alpha) = {alpha}, air-time penalty = {air_time_penalty:.2f}, "
+        f"seed = {seed}.")
 
     view, screen, clock, font = None, None, None, None
     if args.train_gui:
@@ -88,7 +100,7 @@ def main():
         view.set_train_mode(True)
         print("GUI training mode enabled. Press 'T' to toggle turbo mode.")
 
-    env = DinoRunnerEnv(population_size, ENV_SEED, max_score=10_000)
+    env = DinoRunnerEnv(population_size, seed, max_score=10_000)
     population = [create_brain() for _ in range(population_size)]
     best_overall_score = -float('inf')
     best_overall_agent = None
@@ -211,6 +223,11 @@ def main():
         print(
             f"\nTraining finished. Best fitness: {best_overall_score:.2f}")
 
+        if args.save_to:
+            pickle.dump(best_overall_agent.get_flattened_weights(),
+                        open(args.save_to, "wb"))
+            print(f"Saved model to pickled file: {args.save_to}")
+
         if not args.train_gui and args.showcase_best:
             pygame.init()
             pygame.display.set_caption("Best agent showcase_best")
@@ -221,7 +238,7 @@ def main():
 
         if args.showcase_best:
             brains = [best_overall_agent]
-            env = DinoRunnerEnv(len(brains), ENV_SEED)
+            env = DinoRunnerEnv(len(brains), seed)
             view.set_train_mode(False)
             observation = env.reset()
             is_running = True
