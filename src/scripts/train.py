@@ -7,7 +7,7 @@ import argparse
 
 from tqdm import tqdm
 from dino_evo.env import *
-from dino_evo.agent import AgentBrain, relu, sigmoid, tanh
+from dino_evo.agent import AgentBrain, relu, sigmoid, tanh, create_brain
 from dino_evo.ga import ga_blx_alpha_crossover, ga_mutate, tournament_selection, HyperParamAnnealingSchedule, calculate_population_diversity
 from dino_evo.vis import PyGameEnvVis
 
@@ -38,13 +38,13 @@ MAX_AIR_TIME_PENALTY = 0.5
 
 AIR_TIME_PENALTY = 0.1
 
-def create_brain() -> AgentBrain:
-    """Creates a brain network to control a dino."""
-    return AgentBrain(INPUT_NODES, layer_configs=[
-        (8, relu),
-        (6, relu),
-        (len(DinoAction), tanh)
-    ])
+# def create_brain() -> AgentBrain:
+#     """Creates a brain network to control a dino."""
+#     return AgentBrain(INPUT_NODES, layer_configs=[
+#         (8, relu),
+#         (6, relu),
+#         (len(DinoAction), tanh)
+#     ])
 
 
 def fitness_func(p, air_time_penalty) -> float:
@@ -101,7 +101,7 @@ def main():
         print("GUI training mode enabled. Press 'T' to toggle turbo mode.")
 
     env = DinoRunnerEnv(population_size, seed, max_score=10_000)
-    population = [create_brain() for _ in range(population_size)]
+    population = [create_brain(INPUT_NODES) for _ in range(population_size)]
     best_overall_score = -float('inf')
     best_overall_agent = None
 
@@ -212,7 +212,7 @@ def main():
             mutated_child_weights = ga_mutate(
                 child_weights, hyper_params['mutation_rate'], hyper_params['mutation_strength'])
 
-            child_nn = create_brain()
+            child_nn = create_brain(INPUT_NODES)
             child_nn.set_flattened_weights(mutated_child_weights)
             new_population.append(child_nn)
 

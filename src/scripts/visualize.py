@@ -4,7 +4,7 @@ import pygame
 import numpy as np
 
 from dino_evo.env import DinoRunnerEnv, DinoAction
-from dino_evo.agent import AgentBrain, relu, tanh
+from dino_evo.agent import AgentBrain, relu, tanh, create_brain
 from dino_evo.vis import PyGameEnvVis
 
 # Display settings
@@ -15,19 +15,11 @@ ENV_SEED = 0xDEAD
 INPUT_NODES = 11  # same as original
 ACTIONS = list(DinoAction)
 
-def create_brain() -> AgentBrain:
-    """Recreate the same network used during training."""
-    return AgentBrain(INPUT_NODES, layer_configs=[
-        (8, relu),
-        (6, relu),
-        (len(DinoAction), tanh)
-    ])
-
 
 def load_trained_brain(model_path: str) -> AgentBrain:
     """Load and return model weights into a fresh brain."""
     weights = pickle.load(open(model_path, "rb"))
-    brain = create_brain()
+    brain = create_brain(INPUT_NODES)
     brain.set_flattened_weights(weights)
     return brain
 
@@ -40,7 +32,6 @@ def main():
     parser.add_argument("--seed", type=int, default=ENV_SEED,
                         help=f"Seed to use for RNG (defaults to {ENV_SEED})")
     args = parser.parse_args()
-
 
     print(f"Loading model from: {args.model}, with seed = {args.seed}")
     brain = load_trained_brain(args.model)

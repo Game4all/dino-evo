@@ -3,6 +3,7 @@ Module defining the agent controller using a simple neural network abstraction.
 """
 
 from typing import Callable
+from dino_evo.env import DinoAction
 import numpy as np
 
 
@@ -85,3 +86,12 @@ class AgentBrain:
             b_size = layer.biases.size
             layer.biases = flat_weights[current_pos: current_pos + b_size]
             current_pos += b_size
+
+
+def create_brain(n_inputs: int) -> AgentBrain:
+    """Creates a brain network to control a dino."""
+    return AgentBrain(n_inputs, layer_configs=[
+        (8, relu),
+        (6, relu),
+        (len(DinoAction), tanh)
+    ])
