@@ -38,15 +38,6 @@ MAX_AIR_TIME_PENALTY = 0.5
 
 AIR_TIME_PENALTY = 0.1
 
-# def create_brain() -> AgentBrain:
-#     """Creates a brain network to control a dino."""
-#     return AgentBrain(INPUT_NODES, layer_configs=[
-#         (8, relu),
-#         (6, relu),
-#         (len(DinoAction), tanh)
-#     ])
-
-
 def fitness_func(p, air_time_penalty) -> float:
     """Calculates the fitness score for a given player."""
     return p.score - p.total_air_time * air_time_penalty
